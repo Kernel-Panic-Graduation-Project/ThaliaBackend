@@ -10,5 +10,4 @@ def serialize_job(job):
         'position': job.position if job.status == 'queued' else 0,
         'created_at': job.created_at.isoformat(),
         'description': job.description,
-        'result': job.result if job.status == 'completed' else None
     }

@@ -1,7 +1,9 @@
 import threading
 import queue
+
+from story_generation.generate_audio import generate_audio
 from .models import StoryJob
-from text_generation.generate_text import generate_text
+from story_generation.generate_text import generate_text
 from .services import JobService
 
 # Global queue for job processing
@@ -30,16 +32,19 @@ def process_jobs():
             JobService.send_job_updates(job, send_individual=True)
             
             # Process the job
-            result = generate_text(job.description)
+            result_text = generate_text(job.description)
             
-            # Update job with result
-            job.result = result
+            # Generate audio from the text
+            result_audio = generate_audio(result_text)
+            
+            # Update job with result - include both text and audio
             job.status = 'completed'
             job.save()
             
-            # Update the associated story with the generated content
+            # Update the associated story with the generated content and audio
             if job.story:
-                job.story.content = result
+                job.story.content = result_text
+                job.story.audio_data = result_audio
                 job.story.save()
             
             # Notify status change again

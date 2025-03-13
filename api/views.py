@@ -8,7 +8,6 @@ from api.models import StoryJob, Story
 from api.tasks import add_job_to_queue
 from .serializers import UserSerializer, LoginSerializer
 from django.contrib.auth.models import User
-from text_generation.generate_text import generate_text
 
 
 # Create your views here.
@@ -155,6 +154,7 @@ class StoryDetailView(APIView):
                 'title': story.title,
                 'user_description': story.user_description,
                 'content': story.content,
+                'audio_data': story.audio_data,
                 'created_at': story.created_at,
             }
             
