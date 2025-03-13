@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
+from api.models import StoryJob
+
 class UserSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
 
@@ -23,3 +25,9 @@ class UserSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+
+class StoryJobSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StoryJob
+        fields = ['id', 'title', 'description', 'status', 'position', 'created_at', 'updated_at']
+        read_only_fields = ['status', 'position', 'created_at', 'updated_at']
