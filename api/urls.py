@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     CreateStoryView, SignupView, LoginView, LogoutView,
-    StoryJobStatusView, UserJobsView
+    UserStoriesView, StoryDetailView
 )
 
 urlpatterns = [
@@ -10,6 +10,6 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
     
     path('create-story/', CreateStoryView.as_view(), name='create-story'),
-    path('job/<int:job_id>/', StoryJobStatusView.as_view(), name='job-status'),
-    path('jobs/', UserJobsView.as_view(), name='user-jobs'),
+    path('stories/', UserStoriesView.as_view(), name='user-stories'),
+    path('story/<int:story_id>/', StoryDetailView.as_view(), name='story-detail'),
 ]

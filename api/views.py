@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 
-from api.models import StoryJob
+from api.models import StoryJob, Story
 from api.tasks import add_job_to_queue
 from .serializers import UserSerializer, LoginSerializer
 from django.contrib.auth.models import User
@@ -92,11 +92,19 @@ class CreateStoryView(APIView):
                 'error': 'Title and description are required'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Create a new job
+        story = Story.objects.create(
+            user=request.user,
+            title=story_title,
+            user_description=story_description,
+            content=""
+        )
+        
+        # Create a new job and link it to the story
         job = StoryJob.objects.create(
             user=request.user,
             title=story_title,
             description=story_description,
+            story=story
         )
         
         # Add job to queue
@@ -107,54 +115,50 @@ class CreateStoryView(APIView):
         
         return Response({
             'job_id': job.id,
+            'story_id': story.id,
             'status': job.status,
             'position': job.position
         }, status=status.HTTP_201_CREATED)
 
 
-
-class StoryJobStatusView(APIView):
+class UserStoriesView(APIView):
     """
-    API endpoint for checking story job status
-    """
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def get(self, request, job_id):
-        try:
-            job = StoryJob.objects.get(id=job_id, user=request.user)
-            
-            response_data = {
-                'job_id': job.id,
-                'status': job.status,
-                'title': job.title,
-                'position': job.position if job.status == 'queued' else 0,
-            }
-            
-            # Include result if job is completed
-            if job.status == 'completed' and job.result:
-                response_data['result'] = job.result
-            
-            return Response(response_data, status=status.HTTP_200_OK)
-            
-        except StoryJob.DoesNotExist:
-            return Response({'error': 'Job not found'}, status=status.HTTP_404_NOT_FOUND)
-
-
-class UserJobsView(APIView):
-    """
-    API endpoint for listing all jobs for the current user
+    API endpoint for listing all stories for the current user
     """
     permission_classes = [permissions.IsAuthenticated]
     
     def get(self, request):
-        jobs = StoryJob.objects.filter(user=request.user)
+        stories = Story.objects.filter(user=request.user)
         
-        job_list = [{
-            'job_id': job.id,
-            'title': job.title,
-            'status': job.status,
-            'position': job.position if job.status == 'queued' else 0,
-            'created_at': job.created_at,
-        } for job in jobs]
+        story_list = [{
+            'story_id': story.id,
+            'title': story.title,
+            'content': story.content,
+            'created_at': story.created_at,
+        } for story in stories]
         
-        return Response(job_list, status=status.HTTP_200_OK)
+        return Response(story_list, status=status.HTTP_200_OK)
+
+
+class StoryDetailView(APIView):
+    """
+    API endpoint for retrieving a specific story
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request, story_id):
+        try:
+            story = Story.objects.get(id=story_id, user=request.user)
+            
+            response_data = {
+                'story_id': story.id,
+                'title': story.title,
+                'user_description': story.user_description,
+                'content': story.content,
+                'created_at': story.created_at,
+            }
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+            
+        except Story.DoesNotExist:
+            return Response({'error': 'Story not found'}, status=status.HTTP_404_NOT_FOUND)

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import StoryJob
+from .models import StoryJob, Story
 
 # Register your models here.
 @admin.register(StoryJob)
@@ -19,3 +19,10 @@ class StoryJobAdmin(admin.ModelAdmin):
             'fields': ('created_at', 'updated_at'),
         }),
     )
+
+@admin.register(Story)
+class StoryAdmin(admin.ModelAdmin):
+    list_display = ('title', 'user', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('title', 'content', 'user__username')
+    readonly_fields = ('created_at',)

@@ -3,6 +3,10 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import User
 
+from api.models import StoryJob
+from .services import JobService
+from .utils import serialize_job
+
 class JobConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.user_id = self.scope['url_route']['kwargs']['user_id']
@@ -74,37 +78,18 @@ class JobConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_user_jobs(self):
-        from .models import StoryJob
         try:
             user = User.objects.get(id=self.user_id)
-            jobs = StoryJob.objects.filter(user=user)
-            return [
-                {
-                    'job_id': job.id,
-                    'title': job.title,
-                    'status': job.status,
-                    'position': job.position if job.status == 'queued' else 0,
-                    'created_at': job.created_at.isoformat(),
-                    'result': job.result if job.status == 'completed' else None
-                } for job in jobs
-            ]
+            jobs = JobService.get_jobs_for_user(user)
+            return [serialize_job(job) for job in jobs]
         except User.DoesNotExist:
             return []
-    
+
     @database_sync_to_async
     def get_single_job(self, job_id):
-        from .models import StoryJob
         try:
             user = User.objects.get(id=self.user_id)
-            job = StoryJob.objects.get(id=job_id, user=user)
-            return {
-                'job_id': job.id,
-                'title': job.title,
-                'status': job.status,
-                'position': job.position if job.status == 'queued' else 0,
-                'created_at': job.created_at.isoformat(),
-                'description': job.description,
-                'result': job.result if job.status == 'completed' else None
-            }
+            job = JobService.get_job_by_id(job_id, user)
+            return serialize_job(job)
         except (User.DoesNotExist, StoryJob.DoesNotExist):
             return None
