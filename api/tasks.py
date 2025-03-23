@@ -32,20 +32,26 @@ def process_jobs():
             JobService.send_job_updates(job, send_individual=True)
             
             # Process the job
-            result_text = generate_text(job.description)
+            result_llm_sections = generate_text(job.description)
+            
+            # Get the generated text sections
+            result_text_sections = result_llm_sections.get('text_sections', [])
             
             # Generate audio from the text
-            result_audio = generate_audio(result_text)
-            
-            # Update job with result - include both text and audio
-            job.status = 'completed'
-            job.save()
+            result_audios = []
+            for section in result_text_sections:
+                result_audio = generate_audio(section)
+                result_audios.append(result_audio)
             
             # Update the associated story with the generated content and audio
             if job.story:
-                job.story.content = result_text
-                job.story.audio_data = result_audio
+                job.story.set_text_sections(result_text_sections)
+                job.story.set_audios(result_audios)
                 job.story.save()
+            
+            # Update job with result
+            job.status = 'completed'
+            job.save()
             
             # Notify status change again
             JobService.send_job_updates(job, send_individual=True)

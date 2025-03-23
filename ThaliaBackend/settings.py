@@ -11,10 +11,17 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+if os.path.exists(os.path.join(BASE_DIR, '.env')):
+    load_dotenv(os.path.join(BASE_DIR, '.env'))
+else:
+    load_dotenv(os.path.join(BASE_DIR, '.env.default'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -29,7 +36,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_HEADERS = ['*']
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'bass-flexible-freely.ngrok-free.app']
 
 CSRF_TRUSTED_ORIGINS = ['http://localhost']
 

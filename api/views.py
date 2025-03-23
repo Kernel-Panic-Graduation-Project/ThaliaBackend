@@ -6,6 +6,7 @@ from rest_framework.authtoken.models import Token
 
 from api.models import StoryJob, Story
 from api.tasks import add_job_to_queue
+from api.utils import contains_profanity
 from .serializers import UserSerializer, LoginSerializer
 from django.contrib.auth.models import User
 
@@ -85,6 +86,11 @@ class CreateStoryView(APIView):
     def post(self, request):
         story_title = request.data.get('title')
         story_description = request.data.get('description')
+
+        if contains_profanity(story_title) or contains_profanity(story_description):
+            return Response({
+                'error': 'Profanity detected in title or description'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         if not story_title or not story_description:
             return Response({
@@ -95,7 +101,6 @@ class CreateStoryView(APIView):
             user=request.user,
             title=story_title,
             user_description=story_description,
-            content=""
         )
         
         # Create a new job and link it to the story
@@ -153,8 +158,8 @@ class StoryDetailView(APIView):
                 'story_id': story.id,
                 'title': story.title,
                 'user_description': story.user_description,
-                'content': story.content,
-                'audio_data': story.audio_data,
+                'text_sections': story.get_text_sections(),
+                'audios': story.get_audios(),
                 'created_at': story.created_at,
             }
             

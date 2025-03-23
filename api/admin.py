@@ -13,7 +13,7 @@ class StoryJobAdmin(admin.ModelAdmin):
             'fields': ('user', 'title', 'description')
         }),
         ('Status Information', {
-            'fields': ('status', 'position', 'result')
+            'fields': ('status', 'position')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
