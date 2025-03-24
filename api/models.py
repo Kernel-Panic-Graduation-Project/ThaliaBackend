@@ -6,14 +6,14 @@ import json
 class StoryJob(models.Model):
     STATUS_CHOICES = (
         ('queued', 'Queued'),
-        ('processing', 'Processing'),
+        ('generating_story', 'Generating Story'),
+        ('generating_audio', 'Generating Audio'),
         ('completed', 'Completed'),
         ('failed', 'Failed'),
     )
     
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    title = models.CharField(max_length=255)
-    description = models.TextField()
+    result = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='queued')
     position = models.IntegerField(default=0)
     story = models.ForeignKey('Story', on_delete=models.CASCADE, blank=True, null=True)
@@ -24,7 +24,7 @@ class StoryJob(models.Model):
         ordering = ['created_at']
     
     def __str__(self):
-        return f"{self.user.username}'s job: {self.title} ({self.status})"
+        return f"{self.user.username}'s job: {self.story.title} ({self.status})"
 
 
 class Story(models.Model):

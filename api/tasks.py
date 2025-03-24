@@ -23,8 +23,8 @@ def process_jobs():
             # Get the job from database
             job = StoryJob.objects.get(id=job_id)
             
-            # Update job status to processing
-            job.status = 'processing'
+            # Update job status to generating story
+            job.status = 'generating_story'
             job.position = 0
             job.save()
             
@@ -32,10 +32,27 @@ def process_jobs():
             JobService.send_job_updates(job, send_individual=True)
             
             # Process the job
-            result_llm_sections = generate_text(job.description)
+            result_llm_sections = generate_text(job.story.user_description)
+            
+            # Get the title
+            result_title = result_llm_sections.get('title', 'Untitled Story')
+
+            if job.story:
+                job.story.title = result_title
+                job.story.save()
             
             # Get the generated text sections
             result_text_sections = result_llm_sections.get('text_sections', [])
+            
+            if job.story:
+                job.story.set_text_sections(result_text_sections)
+                job.story.save()
+
+            job.status = 'generating_audio'
+            job.save()
+
+            # Notify status change
+            JobService.send_job_updates(job, send_individual=True)
             
             # Generate audio from the text
             result_audios = []
@@ -45,7 +62,6 @@ def process_jobs():
             
             # Update the associated story with the generated content and audio
             if job.story:
-                job.story.set_text_sections(result_text_sections)
                 job.story.set_audios(result_audios)
                 job.story.save()
             

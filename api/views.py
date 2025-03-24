@@ -84,30 +84,26 @@ class CreateStoryView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request):
-        story_title = request.data.get('title')
         story_description = request.data.get('description')
 
-        if contains_profanity(story_title) or contains_profanity(story_description):
+        if contains_profanity(story_description):
             return Response({
-                'error': 'Profanity detected in title or description'
+                'error': 'Profanity detected in request'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        if not story_title or not story_description:
+        if not story_description:
             return Response({
-                'error': 'Title and description are required'
+                'error': 'Description is required'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         story = Story.objects.create(
             user=request.user,
-            title=story_title,
             user_description=story_description,
         )
         
         # Create a new job and link it to the story
         job = StoryJob.objects.create(
             user=request.user,
-            title=story_title,
-            description=story_description,
             story=story
         )
         
