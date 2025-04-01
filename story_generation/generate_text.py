@@ -4,11 +4,15 @@ import requests
 
 LLM_CONTAINER_URL = os.getenv("LLM_CONTAINER_URL", "http://localhost:8080")
 
-def generate_text(input, max_seq_length=50, temperature=0.7, top_k=50, top_p=0.95):
+def generate_text(input, max_seq_length=50, repetition_penalty=1.2, temperature=0.7, top_k=50):
     system_prompt = "You are an exceptional story teller that writes stories in transcript format for children."
     try:
         payload = {
             "model": "model",
+            "max_completion_tokens": max_seq_length,
+            "repeat_penalty": repetition_penalty,
+            "temperature": temperature,
+            "top_k": top_k,
             "messages": [
                 {
                     "role": "system",
@@ -16,7 +20,7 @@ def generate_text(input, max_seq_length=50, temperature=0.7, top_k=50, top_p=0.9
                 },
                 {
                     "role": "user",
-                    "content": "Generate an episode of The Amazing World Of Gumball with the given keywords and size:\nkeywords: gumball, darwin, school, driving to home, basketball; size: short"
+                    "content": f"Generate an episode of The Amazing World Of Gumball with the given keywords and size:\nkeywords: {input}; size: short"
                 }
             ]
         }

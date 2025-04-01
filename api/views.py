@@ -104,6 +104,7 @@ class CreateStoryView(APIView):
         # Create a new job and link it to the story
         job = StoryJob.objects.create(
             user=request.user,
+            title='Untitled Story',
             story=story
         )
         

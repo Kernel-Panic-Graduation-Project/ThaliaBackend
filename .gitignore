@@ -9,5 +9,7 @@
 */.pytest_cache/
 */.mypy_cache/
 .env
-db.sqlite3
+
 run_ngrok_backend_server.bat
+
+db.sqlite3
