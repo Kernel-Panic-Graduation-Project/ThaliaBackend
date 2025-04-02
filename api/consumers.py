@@ -39,15 +39,18 @@ class JobConsumer(AsyncWebsocketConsumer):
     # Process different message types
     async def process_message(self, action, data):
         if action == 'fetch_stories':
-            # Fetch all jobs for the user
-            jobs = await self.get_user_jobs()
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'jobs_update',
-                    'jobs': jobs
-                }
-            )
+            # Check if we should filter for favorites only
+            favorites_only = data.get('favorites_only', False)
+            
+            # Fetch jobs for the user, potentially filtered by favorites
+            jobs = await self.get_user_jobs(favorites_only)
+            
+            # Send directly to requesting client only
+            await self.send(text_data=json.dumps({
+                'jobs': jobs,
+                'favorites_only': favorites_only  # Include this so frontend knows the context
+            }))
+            
         elif action == 'fetch_job':
             # Fetch a specific job
             job_id = data.get('job_id')
@@ -77,10 +80,18 @@ class JobConsumer(AsyncWebsocketConsumer):
         }))
 
     @database_sync_to_async
-    def get_user_jobs(self):
+    def get_user_jobs(self, favorites_only=False):
         try:
             user = User.objects.get(id=self.user_id)
-            jobs = JobService.get_jobs_for_user(user)
+            
+            if favorites_only:
+                # Get only liked stories and their associated jobs
+                liked_stories = user.liked_stories.all()
+                jobs = StoryJob.objects.filter(story__in=liked_stories, user=user)
+            else:
+                # Get all jobs for the user
+                jobs = JobService.get_jobs_for_user(user)
+                
             return [serialize_job(job) for job in jobs]
         except User.DoesNotExist:
             return []

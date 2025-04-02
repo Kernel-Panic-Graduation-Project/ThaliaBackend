@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import User
 from .models import StoryJob, Story
 
 # Register your models here.
@@ -39,3 +41,32 @@ class StoryAdmin(admin.ModelAdmin):
     list_filter = ('created_at',)
     search_fields = ('title', 'content', 'user__username')
     readonly_fields = ('created_at',)
+
+# Define an inline admin for the liked stories
+class LikedStoriesInline(admin.TabularInline):
+    model = Story.likes.through
+    verbose_name = "Liked Story"
+    verbose_name_plural = "Liked Stories"
+    extra = 0
+    readonly_fields = ('story_title', 'story_created_at')
+    fields = ('story_title', 'story_created_at')
+    can_delete = False
+
+    def story_title(self, obj):
+        return obj.story.title
+    story_title.short_description = 'Story Title'
+
+    def story_created_at(self, obj):
+        return obj.story.created_at
+    story_created_at.short_description = 'Created At'
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+# Define a new UserAdmin
+class UserAdmin(BaseUserAdmin):
+    inlines = (LikedStoriesInline,)
+
+# Re-register UserAdmin
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)

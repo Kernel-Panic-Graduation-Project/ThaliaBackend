@@ -37,6 +37,7 @@ class Story(models.Model):
     text_sections = models.TextField(blank=True, null=True)  # Stored as JSON
     audios = models.TextField(blank=True, null=True)  # Stored as JSON
     created_at = models.DateTimeField(auto_now_add=True)
+    likes = models.ManyToManyField(User, related_name='liked_stories', blank=True)
     
     def get_text_sections(self):
         """Return text sections as a list"""
@@ -53,6 +54,10 @@ class Story(models.Model):
     def set_audios(self, audios_list):
         """Set audios from a list"""
         self.audios = json.dumps(audios_list)
+    
+    def get_likes_count(self):
+        """Return the number of likes for the story"""
+        return self.likes.count()
     
     def __str__(self):
         return self.title

@@ -203,6 +203,7 @@ class StoryDetailView(APIView):
                 'text_sections': story.get_text_sections(),
                 'audios': story.get_audios(),
                 'created_at': story.created_at,
+                'favorited': story.likes.filter(id=request.user.id).exists()
             }
             
             return Response(response_data, status=status.HTTP_200_OK)
@@ -284,3 +285,63 @@ class ConfirmPasswordResetView(APIView):
             
         except PasswordResetToken.DoesNotExist:
             return Response({'error': 'Invalid email or token.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LikeStoryView(APIView):
+    """
+    API endpoint for liking a story
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        try:
+            story_id = request.data.get('story_id')
+            if not story_id:
+                return Response({'error': 'Story ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+            story = Story.objects.get(id=story_id)
+            
+            # Check if already liked
+            if story.likes.filter(id=request.user.id).exists():
+                return Response({'message': 'Story already liked'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Add like
+            story.likes.add(request.user)
+            
+            return Response({
+                'message': 'Story liked successfully',
+                'likes_count': story.get_likes_count()
+            }, status=status.HTTP_200_OK)
+            
+        except Story.DoesNotExist:
+            return Response({'error': 'Story not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class UnlikeStoryView(APIView):
+    """
+    API endpoint for unliking a story
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        try:
+            story_id = request.data.get('story_id')
+            if not story_id:
+                return Response({'error': 'Story ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+            story = Story.objects.get(id=story_id)
+            
+            # Check if liked first
+            if not story.likes.filter(id=request.user.id).exists():
+                return Response({'message': 'Story was not liked'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Remove like
+            story.likes.remove(request.user)
+            
+            return Response({
+                'message': 'Story unliked successfully',
+                'likes_count': story.get_likes_count()
+            }, status=status.HTTP_200_OK)
+            
+        except Story.DoesNotExist:
+            return Response({'error': 'Story not found'}, status=status.HTTP_404_NOT_FOUND)

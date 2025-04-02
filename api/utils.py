@@ -1,4 +1,4 @@
-from profanity_check import predict, predict_prob
+from profanity_check import predict
 
 def serialize_job(job):
     """
@@ -12,6 +12,7 @@ def serialize_job(job):
         'position': job.position if job.status == 'queued' else 0,
         'created_at': job.created_at.isoformat(),
         'description': job.story.user_description if job.story else '',
+        'favorited': job.user in job.story.likes.all() if job.story else False,
     }
 
 def contains_profanity(text):
