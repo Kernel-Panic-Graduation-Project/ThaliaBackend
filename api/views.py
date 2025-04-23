@@ -130,6 +130,8 @@ class CreateStoryView(APIView):
     
     def post(self, request):
         story_description = request.data.get('description')
+        story_theme = request.data.get('theme')
+        story_characters = request.data.get('characters')
 
         if contains_profanity(story_description):
             return Response({

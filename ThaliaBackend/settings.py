@@ -36,17 +36,21 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_HEADERS = ['*']
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '192.168.0.15',
-    'bass-flexible-freely.ngrok-free.app'
-]
+# SECURITY WARNING: define the correct hosts in production!
+# ALLOWED_HOSTS = [
+#     'localhost',
+#     '127.0.0.1',
+#     '192.168.0.15',
+#     '192.168.63.234',
+#     'bass-flexible-freely.ngrok-free.app'
+# ]
+ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
     'http://192.168.0.15:8000',
+    'http://192.168.63.234:8000',
     'https://bass-flexible-freely.ngrok-free.app',
 ]
 

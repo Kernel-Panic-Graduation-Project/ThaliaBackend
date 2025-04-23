@@ -50,16 +50,6 @@ class JobConsumer(AsyncWebsocketConsumer):
                 'jobs': jobs,
                 'favorites_only': favorites_only  # Include this so frontend knows the context
             }))
-            
-        elif action == 'fetch_job':
-            # Fetch a specific job
-            job_id = data.get('job_id')
-            if job_id:
-                job = await self.get_single_job(job_id)
-                if job:
-                    await self.send(text_data=json.dumps({
-                        'job': job
-                    }))
 
     # Receive message from room group
     async def jobs_update(self, event):
@@ -95,12 +85,3 @@ class JobConsumer(AsyncWebsocketConsumer):
             return [serialize_job(job) for job in jobs]
         except User.DoesNotExist:
             return []
-
-    @database_sync_to_async
-    def get_single_job(self, job_id):
-        try:
-            user = User.objects.get(id=self.user_id)
-            job = JobService.get_job_by_id(job_id, user)
-            return serialize_job(job)
-        except (User.DoesNotExist, StoryJob.DoesNotExist):
-            return None
