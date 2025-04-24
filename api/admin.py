@@ -10,16 +10,16 @@ admin.site.site_title = "Thalia Admin Portal"
 # Register your models here.
 @admin.register(StoryJob)
 class StoryJobAdmin(admin.ModelAdmin):
-    list_display = ('story__title', 'user', 'status', 'position', 'created_at', 'updated_at')
+    list_display = ('story__title', 'get_user', 'status', 'position', 'created_at', 'updated_at')
     list_filter = ('status', 'created_at')
-    search_fields = ('story__title', 'story__description', 'user__username',)
-    readonly_fields = ('created_at', 'updated_at', 'get_story_title', 'get_story_description')
+    search_fields = ('story__title', 'story__user_description', 'story__user__username',)
+    readonly_fields = ('created_at', 'updated_at', 'get_story_title', 'get_story_description', 'get_user')
     fieldsets = (
         (None, {
-            'fields': ('user', 'story')
+            'fields': ('story',)
         }),
         ('Story Details', {
-            'fields': ('get_story_title', 'get_story_description')
+            'fields': ('get_story_title', 'get_story_description', 'get_user')
         }),
         ('Status Information', {
             'fields': ('status', 'position', 'result'),
@@ -38,6 +38,11 @@ class StoryJobAdmin(admin.ModelAdmin):
         return obj.story.user_description if obj.story else 'No Description'
     get_story_description.short_description = 'Story Description'
     get_story_description.admin_order_field = 'story__user_description'
+
+    def get_user(self, obj):
+        return obj.story.user if obj.story else None
+    get_user.short_description = 'User'
+    get_user.admin_order_field = 'story__user__username'
 
 @admin.register(Story)
 class StoryAdmin(admin.ModelAdmin):

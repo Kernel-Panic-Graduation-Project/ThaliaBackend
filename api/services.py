@@ -9,14 +9,14 @@ class JobService:
     @staticmethod
     def get_jobs_for_user(user):
         """Get all jobs for a user"""
-        return StoryJob.objects.filter(user=user).order_by('-created_at')
+        return StoryJob.objects.filter(story__user=user).order_by('-created_at')
     
     @staticmethod
     def get_job_by_id(job_id, user=None):
         """Get a specific job by ID, optionally filtering by user"""
         query = {'id': job_id}
         if user:
-            query['user'] = user
+            query['story__user'] = user
         return StoryJob.objects.get(**query)
     
     @staticmethod
@@ -33,11 +33,11 @@ class JobService:
     def send_job_updates(job, send_individual=True):
         """Send WebSocket notifications about job status changes"""
         channel_layer = get_channel_layer()
-        user_id = job.user.id
+        user_id = job.story.user.id
         room_group_name = f'jobs_{user_id}'
         
         # Get all jobs for this user
-        jobs = JobService.get_jobs_for_user(job.user)
+        jobs = JobService.get_jobs_for_user(job.story.user)
         jobs_data = [serialize_job(j) for j in jobs]
         
         # Send full jobs list update

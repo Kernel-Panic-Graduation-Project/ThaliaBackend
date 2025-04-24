@@ -15,7 +15,6 @@ class StoryJob(models.Model):
         ('failed', 'Failed'),
     )
     
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
     result = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='queued')
     position = models.IntegerField(default=0)
@@ -27,7 +26,7 @@ class StoryJob(models.Model):
         ordering = ['created_at']
     
     def __str__(self):
-        return f"{self.user.username}'s job: {self.story.title} ({self.status})"
+        return f"{self.story.user.username}'s job: {self.story.title} ({self.status})"
 
 
 class Story(models.Model):

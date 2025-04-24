@@ -77,7 +77,7 @@ class JobConsumer(AsyncWebsocketConsumer):
             if favorites_only:
                 # Get only liked stories and their associated jobs
                 liked_stories = user.liked_stories.all()
-                jobs = StoryJob.objects.filter(story__in=liked_stories, user=user)
+                jobs = StoryJob.objects.filter(story__in=liked_stories, story__user=user).order_by('-created_at')
             else:
                 # Get all jobs for the user
                 jobs = JobService.get_jobs_for_user(user)

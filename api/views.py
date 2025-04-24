@@ -165,7 +165,6 @@ class CreateStoryView(APIView):
 
         # Create a new job and link it to the story
         job = StoryJob.objects.create(
-            user=request.user,
             story=story
         )
 
@@ -216,8 +215,8 @@ class StoryDetailView(APIView):
                 'story_id': story.id,
                 'title': story.title,
                 'user_description': story.user_description,
-                'text_sections': story.get_text_sections(),
-                'audios': story.get_audios(),
+                'text_sections': story.text_sections,
+                'audios': story.audios,
                 'created_at': story.created_at,
                 'favorited': story.likes.filter(id=request.user.id).exists()
             }
