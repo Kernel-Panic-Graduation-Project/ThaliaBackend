@@ -1,7 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-from .models import StoryJob, Story
+from django.utils.safestring import mark_safe
+from .models import StoryJob, Story, StoryTheme, StoryCharacter, StoryCharacterSource
+
+admin.site.site_header = "Thalia Administration"
+admin.site.site_title = "Thalia Admin Portal"
 
 # Register your models here.
 @admin.register(StoryJob)
@@ -42,6 +46,27 @@ class StoryAdmin(admin.ModelAdmin):
     search_fields = ('title', 'content', 'user__username')
     readonly_fields = ('created_at',)
 
+@admin.register(StoryCharacter)
+class StoryCharacterAdmin(admin.ModelAdmin):
+    list_display = ('name', 'user', 'source', 'image_preview', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('name', 'user', 'source')
+    readonly_fields = ('created_at', 'image_preview')
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'user', 'source', 'image', 'image_preview')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at',),
+        }),
+    )
+    
+    def image_preview(self, obj):
+        if obj.image:
+            return mark_safe(f'<img src="{obj.image.url}" width="150" />')
+        return "No Image"
+    image_preview.short_description = 'Image Preview'
+
 # Define an inline admin for the liked stories
 class LikedStoriesInline(admin.TabularInline):
     model = Story.likes.through
@@ -70,3 +95,6 @@ class UserAdmin(BaseUserAdmin):
 # Re-register UserAdmin
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
+
+admin.site.register(StoryTheme)
+admin.site.register(StoryCharacterSource)

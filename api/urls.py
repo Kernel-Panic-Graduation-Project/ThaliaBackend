@@ -3,7 +3,7 @@ from .views import (
     CreateStoryView, SignupView, LoginView, LogoutView,
     UserStoriesView, StoryDetailView, ChangePasswordView,
     ChangeEmailView, RequestPasswordResetView, ConfirmPasswordResetView,
-    LikeStoryView, UnlikeStoryView
+    LikeStoryView, UnlikeStoryView, StoryThemesView, StoryCharactersView
 )
 
 urlpatterns = [
@@ -21,4 +21,6 @@ urlpatterns = [
     path('story/<int:story_id>/', StoryDetailView.as_view(), name='story-detail'),
     path('like-story/', LikeStoryView.as_view(), name='like-story'),
     path('unlike-story/', UnlikeStoryView.as_view(), name='unlike-story'),
+    path('story-themes/', StoryThemesView.as_view(), name='story-themes'),
+    path('story-characters/', StoryCharactersView.as_view(), name='story-characters'),
 ]

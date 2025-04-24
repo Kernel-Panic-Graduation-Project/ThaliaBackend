@@ -4,13 +4,30 @@ import requests
 
 LLM_CONTAINER_URL = os.getenv("LLM_CONTAINER_URL", "http://localhost:8080")
 
-def generate_text(input, max_seq_length=50, repetition_penalty=1.2, temperature=0.7, top_k=50):
+def generate_text(description, theme, characters, max_seq_length=5000, temperature=1.0, top_k=50):
+    character_names = ', '.join([f"{name} ({source})" for name, source in characters])
     system_prompt = "You are an exceptional story teller that writes stories in transcript format for children."
+    input_message = f"""Create me a kids story in a transcript format. It should be like:
+Person1: blablabla
+Person2: blablabla
+[Explain the scene]
+Person3: blablabla
+Person2: blablabla
+The story ends.
+
+Don't generate any text other than the story. Only give the story transcript in the response. Replace Person1, Person2 names with the actual names of the characters.
+Explain the scene sometimes in "[" and "]". Scene explanations should always be between the character speeches. Character speeches shouldn't be inside quotation marks.
+There should only be what the character is saying and nothing else on where blablabla is. Give the output in plain text, so no bold and italic like outputs.
+Use the exact given character names and only use the provided names and no one else. Ensure that the story ends properly without cutting off.
+The story should be approximately between 1250 and 1500 words, and MUST NOT EXCEED 1500 WORDS. End the story with "The story ends."
+The theme should be: {theme}.
+The characters should be: {character_names}.
+The story description is: {description}
+Each character's source is given in parentheses. Use only the provided names in the transcript."""
     try:
         payload = {
             "model": "model",
             "max_completion_tokens": max_seq_length,
-            "repeat_penalty": repetition_penalty,
             "temperature": temperature,
             "top_k": top_k,
             "messages": [
@@ -20,7 +37,7 @@ def generate_text(input, max_seq_length=50, repetition_penalty=1.2, temperature=
                 },
                 {
                     "role": "user",
-                    "content": f"Generate an episode of The Amazing World Of Gumball with the given keywords and size:\nkeywords: {input}; size: short"
+                    "content": input_message
                 }
             ]
         }
@@ -31,40 +48,8 @@ def generate_text(input, max_seq_length=50, repetition_penalty=1.2, temperature=
         )
         
         if response.status_code == 200:
-            return parse_response(response)
+            return response.json().get("choices")[0].get("message").get("content")
         else:
             raise ValueError(f"LLM request failed with status code {response.status_code}")
     except Exception as e:
         raise ValueError(f"Error generating text: {str(e)}")
-
-
-def parse_response(response):
-    try:
-        assistant_message = response.json().get("choices")[0].get("message").get("content")
-        
-        # Extract title
-        title_match = re.search(r"Title:\s*(.*?)(?:\n|$)", assistant_message)
-        title = title_match.group(1).strip() if title_match else "Untitled Story"
-        
-        # Extract all image prompts
-        image_prompts = []
-        for match in re.finditer(r"<imagePrompt>(.*?)</imagePrompt>", assistant_message, re.DOTALL):
-            image_prompts.append(match.group(1).strip())
-        
-        # Extract all text sections
-        text_sections = []
-        for match in re.finditer(r"<text>(.*?)</text>", assistant_message, re.DOTALL):
-            text_sections.append(match.group(1).strip())
-        
-        # If no structured content was found, use the entire message as a single text section
-        if not text_sections:
-            text_sections = [assistant_message]
-        
-        return {
-            "title": title,
-            "image_prompts": image_prompts,
-            "text_sections": text_sections
-        }
-    except Exception as e:
-        print(f"Error parsing LLM response: {str(e)}")
-        return {"title": "Error", "image_prompts": [], "text_sections": [assistant_message]}

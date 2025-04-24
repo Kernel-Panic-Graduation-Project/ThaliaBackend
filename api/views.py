@@ -5,13 +5,13 @@ from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
-from api.models import StoryJob, Story
+from api.models import StoryJob, Story, StoryCharacter, StoryTheme
 from api.tasks import add_job_to_queue
 from api.utils import contains_profanity
 from .serializers import UserSerializer, LoginSerializer
 from django.contrib.auth.models import User
 from .models import PasswordResetToken
-
+from django.db import models
 
 # Create your views here.
 class LoginView(APIView):
@@ -140,27 +140,41 @@ class CreateStoryView(APIView):
         
         if not story_description:
             return Response({
-                'error': 'Description is required'
+                'error': 'Please enter a description for your story.'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
+        if not story_theme:
+            return Response({
+                'error': 'Please select a theme.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        if not story_characters or len(story_characters) < 2:
+            return Response({
+                'error': 'Please select at least two characters.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        if len(story_characters) > 5:
+            return Response({
+                'error': 'Please select no more than five characters.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         story = Story.objects.create(
             user=request.user,
+            title='Untitled Story',
             user_description=story_description,
+            theme=story_theme,
+            characters=story_characters,
         )
-        
+
         # Create a new job and link it to the story
         job = StoryJob.objects.create(
             user=request.user,
-            title='Untitled Story',
             story=story
         )
-        
+
         # Add job to queue
         add_job_to_queue(job)
-        
+
         time.sleep(0.1)
         job.refresh_from_db()
-        
+
         return Response({
             'job_id': job.id,
             'story_id': story.id,
@@ -347,3 +361,43 @@ class UnlikeStoryView(APIView):
             
         except Story.DoesNotExist:
             return Response({'error': 'Story not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class StoryThemesView(APIView):
+    """
+    API endpoint for retrieving all story themes
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        themes = StoryTheme.objects.all()
+        theme_list = [{
+            'theme_id': theme.id,
+            'name': theme.name,
+            'created_at': theme.created_at,
+        } for theme in themes]
+
+        return Response(theme_list, status=status.HTTP_200_OK)
+
+
+class StoryCharactersView(APIView):
+    """
+    API endpoint for retrieving all story characters (global and user-specific)
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        # Get both global characters (user=None) and user's personal characters
+        characters = StoryCharacter.objects.filter(
+            models.Q(user=request.user) | models.Q(user__isnull=True)
+        )
+
+        character_list = [{
+            'character_id': character.id,
+            'name': character.name,
+            'source': character.source.name if character.source else "Your Characters",
+            'image': character.image.url if character.image else None,
+            'created_at': character.created_at,
+        } for character in characters]
+
+        return Response(character_list, status=status.HTTP_200_OK)

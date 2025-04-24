@@ -34,26 +34,12 @@ class Story(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     user_description = models.TextField(blank=True, null=True)
-    text_sections = models.TextField(blank=True, null=True)  # Stored as JSON
-    audios = models.TextField(blank=True, null=True)  # Stored as JSON
+    theme = models.CharField(max_length=100, blank=True, null=True)
+    characters = models.JSONField(blank=True, null=True)
+    text_sections = models.JSONField(blank=True, null=True)
+    audios = models.JSONField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     likes = models.ManyToManyField(User, related_name='liked_stories', blank=True)
-    
-    def get_text_sections(self):
-        """Return text sections as a list"""
-        return json.loads(self.text_sections) if self.text_sections else []
-    
-    def set_text_sections(self, sections_list):
-        """Set text sections from a list"""
-        self.text_sections = json.dumps(sections_list)
-        
-    def get_audios(self):
-        """Return audios as a list"""
-        return json.loads(self.audios) if self.audios else []
-    
-    def set_audios(self, audios_list):
-        """Set audios from a list"""
-        self.audios = json.dumps(audios_list)
     
     def get_likes_count(self):
         """Return the number of likes for the story"""
@@ -83,3 +69,30 @@ class PasswordResetToken(models.Model):
     
     def is_valid(self):
         return not self.is_used and self.expires_at > timezone.now()
+
+
+class StoryCharacterSource(models.Model):
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    
+    def __str__(self):
+        return self.name
+
+
+class StoryCharacter(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+    name = models.CharField(max_length=100)
+    source = models.ForeignKey(StoryCharacterSource, on_delete=models.CASCADE, blank=True, null=True)
+    image = models.ImageField(upload_to='story_characters/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    
+    def __str__(self):
+        return self.name + (" (" + str(self.source) + ")") if self.source else ""
+
+
+class StoryTheme(models.Model):
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
+    def __str__(self):
+        return self.name

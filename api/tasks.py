@@ -32,20 +32,29 @@ def process_jobs():
             JobService.send_job_updates(job, send_individual=True)
             
             # Process the job
-            result_llm_sections = generate_text(job.story.user_description)
-            
+            generated_story = generate_text(
+                description=job.story.user_description,
+                theme=job.story.theme,
+                characters=job.story.characters
+            )
+
             # Get the title
-            result_title = result_llm_sections.get('title', 'Untitled Story')
+            lines = generated_story.splitlines()
+            if lines and lines[0].startswith("Title: "):
+                result_title = lines[0][len("Title: "):].strip()
+                generated_story = '\n'.join(lines[1:]).lstrip()
+            else:
+                result_title = ''
 
             if job.story:
                 job.story.title = result_title
                 job.story.save()
             
             # Get the generated text sections
-            result_text_sections = result_llm_sections.get('text_sections', [])
+            result_text_sections = generated_story.get('text_sections', [])
             
             if job.story:
-                job.story.set_text_sections(result_text_sections)
+                job.story.text_sections = result_text_sections
                 job.story.save()
 
             job.status = 'generating_audio'
@@ -62,30 +71,26 @@ def process_jobs():
             
             # Update the associated story with the generated content and audio
             if job.story:
-                job.story.set_audios(result_audios)
+                job.story.audios = result_audios
                 job.story.save()
             
             # Update job with result
             job.status = 'completed'
             job.save()
             
-            # Notify status change again
+            # Notify status change after completion
             JobService.send_job_updates(job, send_individual=True)
-            
             # Update positions for remaining jobs
             JobService.update_queue_positions()
-            
         except Exception as e:
-            try:
-                job.status = 'failed'
-                job.result = str(e)
-                job.save()
-                
-                # Notify status change for failure
-                JobService.send_job_updates(job, send_individual=True)
-            except:
-                pass
-        
+            job.status = 'failed'
+            job.result = str(e)
+            job.save()
+
+            # Notify status change on failure
+            JobService.send_job_updates(job, send_individual=True)
+            # Update positions for remaining jobs
+            JobService.update_queue_positions()
         finally:
             job_queue.task_done()
     
