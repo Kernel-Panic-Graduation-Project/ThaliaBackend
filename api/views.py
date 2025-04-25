@@ -1,4 +1,5 @@
 import time
+import os
 import requests
 from django.core.mail import send_mail
 from django.conf import settings
@@ -13,6 +14,9 @@ from .serializers import UserSerializer, LoginSerializer
 from django.contrib.auth.models import User
 from .models import PasswordResetToken
 from django.db import models
+
+# get tts backend url from environment variable
+TTS_BACKEND_URL = os.getenv("TTS_BACKEND_URL", "http://localhost:8080")
 
 # Create your views here.
 class LoginView(APIView):
@@ -235,9 +239,6 @@ class UserAudiosView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def get(self, request):
-        print(request.headers)
-        print("Fetching user audio files...")
-        print(f"User ID: {request.user.id}")
         # Make web request to TTS-Backend
         # set user_id in headers
         headers = {
@@ -245,13 +246,42 @@ class UserAudiosView(APIView):
             'Content-Type': 'application/json',
             'User-Id': str(request.user.id),
         }
-        response = requests.get('http://localhost:8010/api/audio-files/getlist', headers=headers)
+        response = requests.get(f'{TTS_BACKEND_URL}/api/audio-files/getlist', headers=headers)
         if response.status_code == 200:
             audio_files = response.json()
             return Response(audio_files, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Failed to retrieve audio files'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class UploadAudioView(APIView):
+    """
+    API endpoint for uploading an audio file
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        # Make web request to TTS-Backend
+        # set user_id in headers
+        print("Uploading audio file...")
+        print(request.data)
+        data = {
+            'name': request.data.get('name', 'audio_file'),
+            'user_id': str(request.user.id),
+            'transcript': request.data.get('transcript', ''),
+        }
+
+        files = {
+            'file': request.FILES['file'],
+        }
+        
+        print(data)
+        response = requests.post(f'{TTS_BACKEND_URL}/api/audio-files/upload/', files=files, data=data)
+        print(response)
+        if response.status_code == 200 or response.status_code == 201:
+            return Response({'success': 'File uploaded'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Failed to upload audio file'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class RequestPasswordResetView(APIView):
     """
