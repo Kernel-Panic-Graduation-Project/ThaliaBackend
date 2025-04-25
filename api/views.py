@@ -283,6 +283,25 @@ class UploadAudioView(APIView):
         else:
             return Response({'error': 'Failed to upload audio file'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class DownloadAudioView(APIView):
+    """
+    API endpoint for downloading an audio file
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request, audio_id):
+        # Make web request to TTS-Backend
+        headers = {
+            'Content-Type': 'application/json',
+            'Audio-File-Id': str(audio_id)
+        }
+        response = requests.get(f'{TTS_BACKEND_URL}/api/audio-files/download', headers=headers)
+        if response.status_code == 200:
+            return Response(response.content, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Failed to download audio file'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class RequestPasswordResetView(APIView):
     """
     API endpoint to request a password reset

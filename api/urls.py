@@ -4,7 +4,7 @@ from .views import (
     UserStoriesView, StoryDetailView, ChangePasswordView,
     ChangeEmailView, RequestPasswordResetView, ConfirmPasswordResetView,
     LikeStoryView, UnlikeStoryView, StoryThemesView, StoryCharactersView,
-    UserAudiosView, UploadAudioView,
+    UserAudiosView, UploadAudioView, DownloadAudioView,
 )
 
 urlpatterns = [
@@ -26,4 +26,5 @@ urlpatterns = [
     path('story-characters/', StoryCharactersView.as_view(), name='story-characters'),
     path('audios/', UserAudiosView.as_view(), name='user-audios'),
     path('upload-audio/', UploadAudioView.as_view(), name='upload-audio'),
+    path('download-audio/<int:audio_id>/', DownloadAudioView.as_view(), name='download-audio'),
 ]
