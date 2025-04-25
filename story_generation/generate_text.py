@@ -5,7 +5,7 @@ import requests
 LLM_CONTAINER_URL = os.getenv("LLM_CONTAINER_URL", "http://localhost:8080")
 
 def generate_text(description, theme, characters, max_seq_length=5000, temperature=1.0, top_k=50):
-    character_names = ', '.join([f"{name} ({source})" for name, source in characters])
+    character_names = ', '.join([f"{char['name']} ({char['source']})" for char in characters])
     system_prompt = "You are an exceptional story teller that writes stories in transcript format for children."
     input_message = f"""Create me a kids story in a transcript format. It should be like:
 Person1: blablabla
@@ -23,7 +23,7 @@ The story should be approximately between 1250 and 1500 words, and MUST NOT EXCE
 The theme should be: {theme}.
 The characters should be: {character_names}.
 The story description is: {description}
-Each character's source is given in parentheses. Use only the provided names in the transcript."""
+Each character's source is given in parentheses. Don't use the sources in the generated story. Use only the provided names in the transcript."""
     try:
         payload = {
             "model": "model",

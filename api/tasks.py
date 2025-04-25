@@ -1,10 +1,12 @@
 import threading
 import queue
-
-from story_generation.generate_audio import generate_audio
-from .models import StoryJob
+import traceback
 from story_generation.generate_text import generate_text
+from story_generation.generate_audio import generate_audio
+from story_generation.generate_image import generate_images, generate_sections_and_image_prompts, split_and_generate_image_prompts
+from .models import StoryJob
 from .services import JobService
+import base64
 
 # Global queue for job processing
 job_queue = queue.Queue()
@@ -49,12 +51,41 @@ def process_jobs():
             if job.story:
                 job.story.title = result_title
                 job.story.save()
+                
+            # Update job status to generating image
+            job.status = 'generating_image'
+            job.save()
+
+            # Notify status change
+            JobService.send_job_updates(job, send_individual=True)
             
-            # Get the generated text sections
-            result_text_sections = generated_story.get('text_sections', [])
-            
+            # Get the generated sections and image prompts
+            divide_by_ai = False
+            if divide_by_ai:
+                sections = generate_sections_and_image_prompts(generated_story)
+            else:
+                sections = split_and_generate_image_prompts(generated_story)
+            sections = generate_images(sections)
+
+            story_text_sections = []
+            story_images = []
+            for section in sections:
+                story_text_sections.append(section.get('text', ''))
+                # Convert binary image data to base64 string for JSON serialization
+                image_data = section.get('image')
+                if image_data and isinstance(image_data, bytes):
+                    encoded_image = base64.b64encode(image_data).decode('utf-8')
+                else:
+                    encoded_image = None
+
+                story_images.append({
+                    'image': encoded_image,
+                    'image_mime_type': section.get('image_mime_type', None),
+                })
+
             if job.story:
-                job.story.text_sections = result_text_sections
+                job.story.text_sections = story_text_sections
+                job.story.images = story_images
                 job.story.save()
 
             job.status = 'generating_audio'
@@ -62,10 +93,10 @@ def process_jobs():
 
             # Notify status change
             JobService.send_job_updates(job, send_individual=True)
-            
+
             # Generate audio from the text
             result_audios = []
-            for section in result_text_sections:
+            for section in story_text_sections:
                 result_audio = generate_audio(section)
                 result_audios.append(result_audio)
             
@@ -84,13 +115,15 @@ def process_jobs():
             JobService.update_queue_positions()
         except Exception as e:
             job.status = 'failed'
-            job.result = str(e)
+            job.result = str(e) + "\n" + traceback.format_exc()
+            job.position = 0
             job.save()
 
             # Notify status change on failure
             JobService.send_job_updates(job, send_individual=True)
             # Update positions for remaining jobs
             JobService.update_queue_positions()
+            raise e
         finally:
             job_queue.task_done()
     
@@ -100,13 +133,13 @@ def process_jobs():
 def add_job_to_queue(job):
     """Add a job to the processing queue and start worker if needed"""
     global worker_running
-    
+
     # Add job to queue
     job_queue.put(job.id)
-    
+
     # Update queue positions
     JobService.update_queue_positions()
-    
+
     # Start worker thread if not already running
     if not worker_running:
         worker_running = True

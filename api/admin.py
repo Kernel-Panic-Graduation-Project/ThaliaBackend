@@ -48,8 +48,16 @@ class StoryJobAdmin(admin.ModelAdmin):
 class StoryAdmin(admin.ModelAdmin):
     list_display = ('title', 'user', 'created_at')
     list_filter = ('created_at',)
-    search_fields = ('title', 'content', 'user__username')
-    readonly_fields = ('created_at',)
+    search_fields = ('title', 'user_description', 'theme', 'characters', 'text_sections', 'audios', 'user__username')
+    readonly_fields = ('created_at', 'text_sections', 'audios')
+    fieldsets = (
+        (None, {
+            'fields': ('user', 'title', 'user_description', 'theme', 'characters', 'text_sections', 'audios')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at',),
+        }),
+    )
 
 @admin.register(StoryCharacter)
 class StoryCharacterAdmin(admin.ModelAdmin):

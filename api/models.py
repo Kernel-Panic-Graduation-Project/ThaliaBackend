@@ -10,6 +10,7 @@ class StoryJob(models.Model):
     STATUS_CHOICES = (
         ('queued', 'Queued'),
         ('generating_story', 'Generating Story'),
+        ('generating_image', 'Generating Image'),
         ('generating_audio', 'Generating Audio'),
         ('completed', 'Completed'),
         ('failed', 'Failed'),
@@ -36,6 +37,7 @@ class Story(models.Model):
     theme = models.CharField(max_length=100, blank=True, null=True)
     characters = models.JSONField(blank=True, null=True)
     text_sections = models.JSONField(blank=True, null=True)
+    images = models.JSONField(blank=True, null=True)
     audios = models.JSONField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     likes = models.ManyToManyField(User, related_name='liked_stories', blank=True)
