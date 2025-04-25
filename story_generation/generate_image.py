@@ -7,8 +7,9 @@ from pydantic import BaseModel
 from google import genai
 from google.genai import types
 from google.genai.errors import ClientError
-import mimetypes
-import uuid
+import base64
+import requests
+from story_generation.image_config import *
 
 GEMINI_API_KEYS = [
     os.getenv("GENAI_API_KEY_5"),
@@ -24,7 +25,7 @@ class Section(BaseModel):
     text: str
     image_prompt: str
 
-def generate_sections_and_image_prompts(generated_story):
+def generate_sections_and_image_prompts(generated_story, theme):
     """
     Generate image prompts and sections for the story using the Gemini API.
     """
@@ -33,26 +34,24 @@ def generate_sections_and_image_prompts(generated_story):
             client = genai.Client(api_key=next(API_KEY_CYCLE))
 
             input_message = f"""
-I will provide you a dialoge based story and character names and you will seperate this story into meaningful segments and provide me an image prompt for each segment to use in SDXL model.,
+I will provide you a story, theme and character name and you will seperate this story into meaningful segments and provide me an image prompt for each segment to use in SDXL model.,
 
 Here are the rules:
-1 - do not describe character apperance, directly use its name as reference.
-2 - try not to use more than one character name in the same prompt. Make prompts with only one character name.
-3 - ABSOLUTELY DO NOT USE MORE THAN ONE CHARACTER NAME IN THE SAME PROMPT.
-4 - create prompts as concrete as possible, do not use abstarct words, just describe the scene in detail.
-5 - just answer the output, do not say hello or anything.
-6 - if more than one prompts share the same environemnt, explain the environment in detail in all of these prompts.
-7 - Explain the environment in detail in all of these prompts.
-8 - Every segment's text MUST CONSIST OF at least 6 sentences
+1 - do not describe character apperance, directly use its name as reference for it's apperance.
+2 - create prompts as concrete as possible, do not use abstarct words, just describe the scene in detail.
+3 - just answer the output, do not say hello or anything.
+4 - if more than one prompts share the same environemnt, explain the environment in detail in all of these prompts.
+5 - create approximately 10 segments for the story.
+6 - be sure to include the whole story in the text fields combined. Try to make the text segments lengths to be as equal as possible.
 
 Here is an example image_prompt:
-
-Alice, realistic, solo, cat, cute, sleeping, light_particles, nature, mountain, depth of field, the best quality, amazing quality, high quality, masterpiece,
+1- Alice, solo, cat, cute, sleeping, light_particles, nature, mountain, depth of field, the best quality, amazing quality, high quality, masterpiece,
 
 Here is the output format:
 SEGMENT 1: \text: ${"story in segment 1"} \image_prompt: ${"image prompt for segment 1"}
 SEGMENT 2: \text: ${"story in segment 2"} \image_prompt: ${"image prompt for segment 2"}
 \n
+Theme: {theme}
 Story:
 {generated_story}"""
 
@@ -175,7 +174,7 @@ Segment:
 
     return sections
 
-def generate_images(sections):
+def generate_images_gemini(sections):
     """
     Generate images for the given sections using the Gemini API.
     """
@@ -235,12 +234,6 @@ def generate_images(sections):
                         # Store the binary data directly in the section
                         section['image'] = inline_data.data
                         section['image_mime_type'] = inline_data.mime_type
-                        
-                        # Optionally save the image to file
-                        file_name = f"image_{uuid.uuid4()}"
-                        file_extension = mimetypes.guess_extension(inline_data.mime_type)
-                        with open(f"{file_name}{file_extension}", "wb") as image_file:
-                            image_file.write(inline_data.data)                
                 break
 
             except ResourceExhausted:
@@ -257,4 +250,91 @@ def generate_images(sections):
                 else:
                     raise e
 
+    return sections
+
+def generate_images(sections, model_category):
+    IMAGE_GENERATOR_URL = os.getenv('IMAGE_GENERATOR_URL')
+    
+    MODEL_CATEGORY = model_category
+    
+    # for section in sections:
+    #     PROMPT = section['image_prompt']
+    #     NEGATIVE_PROMPT = ""
+        
+    #     model_payload = {
+    #         'sd_model_checkpoint': CONFIG_CHECKPOINT[MODEL_CATEGORY]
+    #     }
+
+    #     config_payload = {
+    #         'prompt'              : f'{CONFIG_PROMPT[MODEL_CATEGORY]}, {CONFIG_LORA[MODEL_CATEGORY]}, {PROMPT}',
+    #         'negative_prompt'     : f'{CONFIG_NEGATIVE_PROMPT[MODEL_CATEGORY]}, {NEGATIVE_PROMPT}',
+
+
+    #         'sampler_name'        : f'{CONFIG_SAMPLER[MODEL_CATEGORY]}',
+    #         'scheduler'           : 'Automatic',
+    #         'steps'               : f'{CONFIG_STEPS[MODEL_CATEGORY]}',
+    #         'width'               : f'{CONFIG_WIDTH[MODEL_CATEGORY]}',
+    #         'height'              : f'{CONFIG_HEIGHT[MODEL_CATEGORY]}',
+    #         'cfg_scale'           : f'{CONFIG_GUIDANCE_SCALE[MODEL_CATEGORY]}',
+    #         'seed'                : f'{CONFIG_SEED[MODEL_CATEGORY]}',
+
+    #         'enable_hr'           : True,
+    #         'hr_upscaler'         : f'{CONFIG_UPSCALER[MODEL_CATEGORY]}',
+    #         'hr_scale'            : f'{CONFIG_UPSCALE_FACTOR[MODEL_CATEGORY]}',
+    #         'denoising_strength'  : f'{CONFIG_DENOISING_STRENGTH[MODEL_CATEGORY]}',
+
+    #         'override_settings' : {
+    #             'CLIP_stop_at_last_layers' : 2,
+    #         }
+    #     }
+
+    #     requests.post(url=f'{IMAGE_GENERATOR_URL}/sdapi/v1/options', json=model_payload, verify=False)
+    #     response = requests.post(url=f'{IMAGE_GENERATOR_URL}/sdapi/v1/txt2img', json=config_payload, verify=False).json()
+
+    #     section['image'] = base64.b64decode(response['images'][0])
+    #     section['image_mime_type'] = 'image/png'
+    
+    
+    section = sections[0]
+    
+    PROMPT = section['image_prompt']
+    NEGATIVE_PROMPT = ""
+    
+    model_payload = {
+        'sd_model_checkpoint': CONFIG_CHECKPOINT[MODEL_CATEGORY]
+    }
+
+    config_payload = {
+        'prompt'              : f'{CONFIG_PROMPT[MODEL_CATEGORY]}, {CONFIG_LORA[MODEL_CATEGORY]}, {PROMPT}',
+        'negative_prompt'     : f'{CONFIG_NEGATIVE_PROMPT[MODEL_CATEGORY]}, {NEGATIVE_PROMPT}',
+
+
+        'sampler_name'        : f'{CONFIG_SAMPLER[MODEL_CATEGORY]}',
+        'scheduler'           : 'Automatic',
+        'steps'               : f'{CONFIG_STEPS[MODEL_CATEGORY]}',
+        'width'               : f'{CONFIG_WIDTH[MODEL_CATEGORY]}',
+        'height'              : f'{CONFIG_HEIGHT[MODEL_CATEGORY]}',
+        'cfg_scale'           : f'{CONFIG_GUIDANCE_SCALE[MODEL_CATEGORY]}',
+        'seed'                : f'{CONFIG_SEED[MODEL_CATEGORY]}',
+
+        'enable_hr'           : False,
+        'hr_upscaler'         : f'{CONFIG_UPSCALER[MODEL_CATEGORY]}',
+        'hr_scale'            : f'{CONFIG_UPSCALE_FACTOR[MODEL_CATEGORY]}',
+        'denoising_strength'  : f'{CONFIG_DENOISING_STRENGTH[MODEL_CATEGORY]}',
+
+        'override_settings' : {
+            'CLIP_stop_at_last_layers' : 2,
+        }
+    }
+
+    requests.post(url=f'{IMAGE_GENERATOR_URL}/sdapi/v1/options', json=model_payload, verify=False)
+    response = requests.post(url=f'{IMAGE_GENERATOR_URL}/sdapi/v1/txt2img', json=config_payload, verify=False).json()
+
+    section['image'] = base64.b64decode(response['images'][0])
+    section['image_mime_type'] = 'image/png'
+        
+    for section in sections[1:]:
+        section['image'] = sections[0]['image']
+        section['image_mime_type'] = sections[0]['image_mime_type']
+        
     return sections
