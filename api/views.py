@@ -131,13 +131,12 @@ class CreateStoryView(APIView):
     def post(self, request):
         story_description = request.data.get('description')
         story_theme = request.data.get('theme')
-        story_characters = request.data.get('characters')
+        story_character = request.data.get('character')
 
         if contains_profanity(story_description):
             return Response({
                 'error': 'Profanity detected in request'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
         if not story_description:
             return Response({
                 'error': 'Please enter a description for your story.'
@@ -146,13 +145,9 @@ class CreateStoryView(APIView):
             return Response({
                 'error': 'Please select a theme.'
             }, status=status.HTTP_400_BAD_REQUEST)
-        if not story_characters or len(story_characters) < 2:
+        if not story_character:
             return Response({
-                'error': 'Please select at least two characters.'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        if len(story_characters) > 5:
-            return Response({
-                'error': 'Please select no more than five characters.'
+                'error': 'Please select a character.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
         story = Story.objects.create(
@@ -160,7 +155,7 @@ class CreateStoryView(APIView):
             title='Untitled Story',
             user_description=story_description,
             theme=story_theme,
-            characters=story_characters,
+            characters=story_character,
         )
 
         # Create a new job and link it to the story
@@ -217,6 +212,7 @@ class StoryDetailView(APIView):
                 'user_description': story.user_description,
                 'text_sections': story.text_sections,
                 'audios': story.audios,
+                'images': story.images,
                 'created_at': story.created_at,
                 'favorited': story.likes.filter(id=request.user.id).exists()
             }

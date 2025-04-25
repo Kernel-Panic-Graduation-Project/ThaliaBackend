@@ -4,7 +4,7 @@ This guide will help you set up and run the Thalia Backend application, which is
 
 ## Prerequisites
 
-- Python 3.8+ installed
+- Python 3.11+ installed
 - Git (optional, for cloning the repository)
 - An available port (default: 8000)
 
