@@ -53,6 +53,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://192.168.63.234:8000',
     'http://172.17.192.1:8000',
     'http://10.2.129.88:8000',
+    'http://10.5.148.20:8000',
     'https://bass-flexible-freely.ngrok-free.app',
 ]
 

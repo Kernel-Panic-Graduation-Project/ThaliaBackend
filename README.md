@@ -13,7 +13,7 @@ This guide will help you set up and run the Thalia Backend application, which is
 ### 1. Clone or Download the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Kernel-Panic-Graduation-Project/ThaliaBackend.git
 cd ThaliaBackend
 ```
 

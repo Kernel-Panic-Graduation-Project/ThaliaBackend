@@ -14,6 +14,8 @@ from .serializers import UserSerializer, LoginSerializer
 from django.contrib.auth.models import User
 from .models import PasswordResetToken
 from django.db import models
+from django.http import HttpResponse
+import io
 
 # get tts backend url from environment variable
 TTS_BACKEND_URL = os.getenv("TTS_BACKEND_URL", "http://localhost:8080")
@@ -298,7 +300,23 @@ class DownloadAudioView(APIView):
         }
         response = requests.get(f'{TTS_BACKEND_URL}/api/audio-files/download', headers=headers)
         if response.status_code == 200:
-            return Response(response.content, status=status.HTTP_200_OK)
+            # Create a file-like object from the binary content
+            audio_io = io.BytesIO(response.content)
+            
+            # Get the content type from the response if available, or default to octet-stream
+            content_type = response.headers.get('Content-Type', 'application/octet-stream')
+            
+            # Get the filename from the response if available, or use a default
+            filename = response.headers.get('Content-Disposition', '').split('filename=')[-1].strip('"') or f'audio_{audio_id}.mp3'
+            
+            # Return as a file response
+            return HttpResponse(
+                audio_io,
+                content_type=content_type,
+                headers={
+                    'Content-Disposition': f'attachment; filename="{filename}"'
+                }
+            )
         else:
             return Response({'error': 'Failed to download audio file'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

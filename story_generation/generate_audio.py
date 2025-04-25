@@ -3,7 +3,7 @@ import os
 import tempfile
 import base64
 
-def generate_audio(input_text):
+def generate_audio_gtts(input_text):
 	"""
 	Convert text to speech using Google Text-to-Speech API and return base64 encoded audio data.
 	

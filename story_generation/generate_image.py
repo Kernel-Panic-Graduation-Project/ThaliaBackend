@@ -332,7 +332,7 @@ def generate_images(sections, model_category):
 
     section['image'] = base64.b64decode(response['images'][0])
     section['image_mime_type'] = 'image/png'
-        
+
     for section in sections[1:]:
         section['image'] = sections[0]['image']
         section['image_mime_type'] = sections[0]['image_mime_type']
