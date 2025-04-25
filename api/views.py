@@ -1,4 +1,5 @@
 import time
+import requests
 from django.core.mail import send_mail
 from django.conf import settings
 from rest_framework import generics, permissions, status
@@ -26,6 +27,9 @@ class LoginView(APIView):
         if serializer.is_valid():
             email = serializer.validated_data['email']
             password = serializer.validated_data['password']
+
+            print(f"Attempting login for email: {email}")
+            print(f"Password provided: {password}")
             
             try:
                 user = User.objects.get(email=email)
@@ -225,6 +229,32 @@ class StoryDetailView(APIView):
             
         except Story.DoesNotExist:
             return Response({'error': 'Story not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class UserAudiosView(APIView):
+    """
+    API endpoint for retrieving all audio files for the current user
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        print(request.headers)
+        print("Fetching user audio files...")
+        print(f"User ID: {request.user.id}")
+        # Make web request to TTS-Backend
+        # set user_id in headers
+        headers = {
+            'Authorization': f'Token {request.user.auth_token.key}',
+            'Content-Type': 'application/json',
+            'User-Id': str(request.user.id),
+        }
+        response = requests.get('http://localhost:8010/api/audio-files/getlist', headers=headers)
+        if response.status_code == 200:
+            audio_files = response.json()
+            return Response(audio_files, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Failed to retrieve audio files'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class RequestPasswordResetView(APIView):
