@@ -135,7 +135,7 @@ class CreateStoryView(APIView):
     def post(self, request):
         story_description = request.data.get('description')
         story_theme = request.data.get('theme')
-        story_character = request.data.get('character')
+        story_characters = request.data.get('characters')
 
         if contains_profanity(story_description):
             return Response({
@@ -149,7 +149,7 @@ class CreateStoryView(APIView):
             return Response({
                 'error': 'Please select a theme.'
             }, status=status.HTTP_400_BAD_REQUEST)
-        if not story_character:
+        if not story_characters:
             return Response({
                 'error': 'Please select a character.'
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -159,7 +159,7 @@ class CreateStoryView(APIView):
             title='Untitled Story',
             user_description=story_description,
             theme=story_theme,
-            characters=story_character,
+            characters=story_characters,
         )
 
         # Create a new job and link it to the story

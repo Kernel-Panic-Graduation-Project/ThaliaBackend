@@ -3,7 +3,7 @@ import queue
 import traceback
 from story_generation.generate_text import generate_text
 from story_generation.generate_audio import generate_audio
-from story_generation.generate_image import generate_images, generate_sections_and_image_prompts, split_and_generate_image_prompts
+from story_generation.generate_image import generate_images, generate_images_gemini, generate_sections_and_image_prompts, split_and_generate_image_prompts
 from .models import StoryJob
 from .services import JobService
 import base64
@@ -60,12 +60,13 @@ def process_jobs():
             JobService.send_job_updates(job, send_individual=True)
             
             # Get the generated sections and image prompts
-            divide_by_ai = False
+            divide_by_ai = True
             if divide_by_ai:
-                sections = generate_sections_and_image_prompts(generated_story)
+                sections = generate_sections_and_image_prompts(generated_story, theme=job.story.theme)
             else:
                 sections = split_and_generate_image_prompts(generated_story)
-            sections = generate_images(sections)
+            model_category = job.story.characters[0].get('source', '')
+            sections = generate_images(sections, model_category)
 
             story_text_sections = []
             story_images = []
