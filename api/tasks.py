@@ -1,8 +1,9 @@
 import threading
 import queue
+import time
 import traceback
 from story_generation.generate_text import generate_text
-from story_generation.generate_audio import generate_audio_gtts
+from story_generation.generate_audio import generate_audio, generate_audio_gtts
 from story_generation.generate_image import generate_images, generate_images_gemini, generate_sections_and_image_prompts, split_and_generate_image_prompts
 from .models import StoryJob
 from .services import JobService
@@ -98,7 +99,8 @@ def process_jobs():
             # Generate audio from the text
             result_audios = []
             for section in story_text_sections:
-                result_audio = generate_audio_gtts(section)
+                result_audio = generate_audio(section, job.story.audio_id)
+                time.sleep(0.2)
                 result_audios.append(result_audio)
             
             # Update the associated story with the generated content and audio

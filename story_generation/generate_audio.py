@@ -2,6 +2,9 @@ from gtts import gTTS
 import os
 import tempfile
 import base64
+import requests
+
+TTS_BACKEND_URL = os.getenv("TTS_BACKEND_URL", "http://localhost:9000")
 
 def generate_audio_gtts(input_text):
 	"""
@@ -36,3 +39,28 @@ def generate_audio_gtts(input_text):
 	except Exception as e:
 		print(f"Error generating audio: {str(e)}")
 		return {"audio_data": None, "error": str(e)}
+
+def generate_audio(input_text, audio_file_id):
+    """
+    Convert text to speech using the specified TTS backend and return base64 encoded audio data.
+
+    Args:
+        input_text: The text to convert to speech
+        audio_file_id: The ID of the voice to use for TTS
+
+    Returns:
+        The base64 encoded audio data or an error message if the request fails.
+    """
+    if not input_text:
+        return {"audio_data": None, "text": input_text}
+
+    response = requests.post(
+        f"{TTS_BACKEND_URL}/api/text-to-audio/generate/",
+        json={"input_text": input_text, "audio_file_id": audio_file_id}
+    )
+
+    if response.status_code == 200:
+        audio_base64 = base64.b64encode(response.content).decode('utf-8')
+        return audio_base64
+    else:
+        return generate_audio_gtts(input_text)

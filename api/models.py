@@ -39,6 +39,7 @@ class Story(models.Model):
     text_sections = models.JSONField(blank=True, null=True)
     images = models.JSONField(blank=True, null=True)
     audios = models.JSONField(blank=True, null=True)
+    audio_id = models.IntegerField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     likes = models.ManyToManyField(User, related_name='liked_stories', blank=True)
     

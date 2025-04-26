@@ -142,6 +142,7 @@ class CreateStoryView(APIView):
         story_description = request.data.get('description')
         story_theme = request.data.get('theme')
         story_characters = request.data.get('characters')
+        audio_id = request.data.get('audio_id')
 
         if contains_profanity(story_description):
             return Response({
@@ -159,6 +160,10 @@ class CreateStoryView(APIView):
             return Response({
                 'error': 'Please select a character.'
             }, status=status.HTTP_400_BAD_REQUEST)
+        if not audio_id:
+            return Response({
+                'error': 'Please select an audio recording.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         story = Story.objects.create(
             user=request.user,
@@ -166,6 +171,7 @@ class CreateStoryView(APIView):
             user_description=story_description,
             theme=story_theme,
             characters=story_characters,
+            audio_id=audio_id,
         )
 
         # Create a new job and link it to the story
