@@ -37,10 +37,10 @@ def generate_sections_and_image_prompts(generated_story, theme):
 I will provide you a story, theme and character name and you will seperate this story into meaningful segments and provide me an image prompt for each segment to use in SDXL model.,
 
 Here are the rules:
-1 - do not describe character apperance, directly use its name as reference for it's apperance.
-2 - create prompts as concrete as possible, do not use abstarct words, just describe the scene in detail.
+1 - do not describe character appearance, directly use its name as reference for its appearance.
+2 - create prompts as concrete as possible, do not use abstract words, just describe the scene in detail.
 3 - just answer the output, do not say hello or anything.
-4 - if more than one prompts share the same environemnt, explain the environment in detail in all of these prompts.
+4 - if more than one prompts share the same environment, explain the environment in detail in all of these prompts.
 5 - create approximately 10 segments for the story.
 6 - be sure to include the whole story in the text fields combined. Try to make the text segments lengths to be as equal as possible.
 
@@ -257,84 +257,41 @@ def generate_images(sections, model_category):
     
     MODEL_CATEGORY = model_category
     
-    # for section in sections:
-    #     PROMPT = section['image_prompt']
-    #     NEGATIVE_PROMPT = ""
+    for section in sections:
+        PROMPT = section['image_prompt']
+        NEGATIVE_PROMPT = ""
         
-    #     model_payload = {
-    #         'sd_model_checkpoint': CONFIG_CHECKPOINT[MODEL_CATEGORY]
-    #     }
-
-    #     config_payload = {
-    #         'prompt'              : f'{CONFIG_PROMPT[MODEL_CATEGORY]}, {CONFIG_LORA[MODEL_CATEGORY]}, {PROMPT}',
-    #         'negative_prompt'     : f'{CONFIG_NEGATIVE_PROMPT[MODEL_CATEGORY]}, {NEGATIVE_PROMPT}',
-
-
-    #         'sampler_name'        : f'{CONFIG_SAMPLER[MODEL_CATEGORY]}',
-    #         'scheduler'           : 'Automatic',
-    #         'steps'               : f'{CONFIG_STEPS[MODEL_CATEGORY]}',
-    #         'width'               : f'{CONFIG_WIDTH[MODEL_CATEGORY]}',
-    #         'height'              : f'{CONFIG_HEIGHT[MODEL_CATEGORY]}',
-    #         'cfg_scale'           : f'{CONFIG_GUIDANCE_SCALE[MODEL_CATEGORY]}',
-    #         'seed'                : f'{CONFIG_SEED[MODEL_CATEGORY]}',
-
-    #         'enable_hr'           : True,
-    #         'hr_upscaler'         : f'{CONFIG_UPSCALER[MODEL_CATEGORY]}',
-    #         'hr_scale'            : f'{CONFIG_UPSCALE_FACTOR[MODEL_CATEGORY]}',
-    #         'denoising_strength'  : f'{CONFIG_DENOISING_STRENGTH[MODEL_CATEGORY]}',
-
-    #         'override_settings' : {
-    #             'CLIP_stop_at_last_layers' : 2,
-    #         }
-    #     }
-
-    #     requests.post(url=f'{IMAGE_GENERATOR_URL}/sdapi/v1/options', json=model_payload, verify=False)
-    #     response = requests.post(url=f'{IMAGE_GENERATOR_URL}/sdapi/v1/txt2img', json=config_payload, verify=False).json()
-
-    #     section['image'] = base64.b64decode(response['images'][0])
-    #     section['image_mime_type'] = 'image/png'
-    
-    
-    section = sections[0]
-    
-    PROMPT = section['image_prompt']
-    NEGATIVE_PROMPT = ""
-    
-    model_payload = {
-        'sd_model_checkpoint': CONFIG_CHECKPOINT[MODEL_CATEGORY]
-    }
-
-    config_payload = {
-        'prompt'              : f'{CONFIG_PROMPT[MODEL_CATEGORY]}, {CONFIG_LORA[MODEL_CATEGORY]}, {PROMPT}',
-        'negative_prompt'     : f'{CONFIG_NEGATIVE_PROMPT[MODEL_CATEGORY]}, {NEGATIVE_PROMPT}',
-
-
-        'sampler_name'        : f'{CONFIG_SAMPLER[MODEL_CATEGORY]}',
-        'scheduler'           : 'Automatic',
-        'steps'               : f'{CONFIG_STEPS[MODEL_CATEGORY]}',
-        'width'               : f'{CONFIG_WIDTH[MODEL_CATEGORY]}',
-        'height'              : f'{CONFIG_HEIGHT[MODEL_CATEGORY]}',
-        'cfg_scale'           : f'{CONFIG_GUIDANCE_SCALE[MODEL_CATEGORY]}',
-        'seed'                : f'{CONFIG_SEED[MODEL_CATEGORY]}',
-
-        'enable_hr'           : False,
-        'hr_upscaler'         : f'{CONFIG_UPSCALER[MODEL_CATEGORY]}',
-        'hr_scale'            : f'{CONFIG_UPSCALE_FACTOR[MODEL_CATEGORY]}',
-        'denoising_strength'  : f'{CONFIG_DENOISING_STRENGTH[MODEL_CATEGORY]}',
-
-        'override_settings' : {
-            'CLIP_stop_at_last_layers' : 2,
+        model_payload = {
+            'sd_model_checkpoint': CONFIG_CHECKPOINT[MODEL_CATEGORY]
         }
-    }
 
-    requests.post(url=f'{IMAGE_GENERATOR_URL}/sdapi/v1/options', json=model_payload, verify=False)
-    response = requests.post(url=f'{IMAGE_GENERATOR_URL}/sdapi/v1/txt2img', json=config_payload, verify=False).json()
+        config_payload = {
+            'prompt'              : f'{CONFIG_PROMPT[MODEL_CATEGORY]}, {CONFIG_LORA[MODEL_CATEGORY]}, {PROMPT}',
+            'negative_prompt'     : f'{CONFIG_NEGATIVE_PROMPT[MODEL_CATEGORY]}, {NEGATIVE_PROMPT}',
 
-    section['image'] = base64.b64decode(response['images'][0])
-    section['image_mime_type'] = 'image/png'
 
-    for section in sections[1:]:
-        section['image'] = sections[0]['image']
-        section['image_mime_type'] = sections[0]['image_mime_type']
+            'sampler_name'        : f'{CONFIG_SAMPLER[MODEL_CATEGORY]}',
+            'scheduler'           : 'Automatic',
+            'steps'               : f'{CONFIG_STEPS[MODEL_CATEGORY]}',
+            'width'               : f'{CONFIG_WIDTH[MODEL_CATEGORY]}',
+            'height'              : f'{CONFIG_HEIGHT[MODEL_CATEGORY]}',
+            'cfg_scale'           : f'{CONFIG_GUIDANCE_SCALE[MODEL_CATEGORY]}',
+            'seed'                : f'{CONFIG_SEED[MODEL_CATEGORY]}',
+
+            'enable_hr'           : False,
+            'hr_upscaler'         : f'{CONFIG_UPSCALER[MODEL_CATEGORY]}',
+            'hr_scale'            : f'{CONFIG_UPSCALE_FACTOR[MODEL_CATEGORY]}',
+            'denoising_strength'  : f'{CONFIG_DENOISING_STRENGTH[MODEL_CATEGORY]}',
+
+            'override_settings' : {
+                'CLIP_stop_at_last_layers' : 2,
+            }
+        }
+
+        requests.post(url=f'{IMAGE_GENERATOR_URL}/sdapi/v1/options', json=model_payload, verify=False)
+        response = requests.post(url=f'{IMAGE_GENERATOR_URL}/sdapi/v1/txt2img', json=config_payload, verify=False).json()
+
+        section['image'] = base64.b64decode(response['images'][0])
+        section['image_mime_type'] = 'image/png'
         
     return sections
